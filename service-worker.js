@@ -3,7 +3,7 @@
    Cache offline resiliente + atualização mais segura.
 ========================================================= */
 
-const CACHE_NAME = "up-coach-cache-v14";
+const CACHE_NAME = "up-coach-cache-v16";
 
 const APP_SHELL = [
   "./",
@@ -14,7 +14,7 @@ const APP_SHELL = [
   "./match-archive.js",
   "./match-lifecycle.js",
   "./backup-manager.js",
-  "./lineup-autofill.js",
+  "./lineup-manager.js",
   "./mobile-drag-fix.js",
   "./manifest.json",
   "./icons/icon-180.png",
