@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+
+  <title>UP Coach</title>
+
+  <meta name="theme-color" content="#05070d" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="UP Coach" />
+
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="apple-touch-icon" href="./icons/icon-180.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png" />
+  <link rel="icon" type="image/png" sizes="512x512" href="./icons/icon-512.png" />
+
+  <link rel="stylesheet" href="./style.css" />
+</head>
+
+<body>
+  <div class="app-shell">
+
+    <!-- TOPO -->
+    <header class="topbar">
+      <button class="icon-button" id="backButton" onclick="goHome()">‹</button>
+
+      <div class="top-title">
+        <span id="screenTitle">UP Coach</span>
+        <small>União Paquerê</small>
+      </div>
+
+      <div class="mini-logo">UP</div>
+    </header>
+
+    <!-- TELA INICIAL -->
+    <main class="screen active" id="homeScreen">
+      <section class="hero">
+        <div class="club-badge">UP</div>
+        <h1><span>UP</span> Coach</h1>
+        <p>Banco de Campo Inteligente</p>
+      </section>
+
+      <section class="menu-list">
+        <button class="menu-card" onclick="showScreen('matchScreen')">
+          <span class="menu-icon">＋</span>
+          <div>
+            <strong>Nova Partida</strong>
+            <small>Criar jogo e iniciar controle</small>
+          </div>
+          <b>›</b>
+        </button>
+
+        <button class="menu-card" onclick="showScreen('squadScreen')">
+          <span class="menu-icon">EL</span>
+          <div>
+            <strong>Elenco</strong>
+            <small>Cadastrar jogadores</small>
+          </div>
+          <b>›</b>
+        </button>
+
+        <button class="menu-card" onclick="showScreen('lineupScreen')">
+          <span class="menu-icon">MC</span>
+          <div>
+            <strong>Escalação</strong>
+            <small>Mini campo tático 7 + 1</small>
+          </div>
+          <b>›</b>
+        </button>
+
+        <button class="menu-card" onclick="showScreen('liveScreen')">
+          <span class="menu-icon">LIVE</span>
+          <div>
+            <strong>Jogo ao Vivo</strong>
+            <small>Scout, cronômetro e lances</small>
+          </div>
+          <b>›</b>
+        </button>
+
+        <button class="menu-card" onclick="showScreen('historyScreen')">
+          <span class="menu-icon">HIS</span>
+          <div>
+            <strong>Histórico</strong>
+            <small>Lances salvos automaticamente</small>
+          </div>
+          <b>›</b>
+        </button>
+
+        <button class="menu-card" onclick="showScreen('summaryScreen')">
+          <span class="menu-icon">ST</span>
+          <div>
+            <strong>Resumo</strong>
+            <small>Estatísticas, alertas e IA</small>
+          </div>
+          <b>›</b>
+        </button>
+      </section>
+
+      <footer class="home-footer">
+        <span>Funciona offline</span>
+        <span>Salvamento automático</span>
+      </footer>
+    </main>
+
+    <!-- NOVA PARTIDA -->
+    <main class="screen" id="matchScreen">
+      <section class="panel">
+        <h2>Nova Partida</h2>
+
+        <label for="opponentInput">Nome do adversário</label>
+        <input id="opponentInput" type="text" placeholder="Ex: Adversário" />
+
+        <label for="placeInput">Local</label>
+        <input id="placeInput" type="text" placeholder="Ex: Campo do Wagner" />
+
+        <label for="matchTypeInput">Tipo de jogo</label>
+        <select id="matchTypeInput">
+          <option>Amistoso</option>
+          <option>Campeonato</option>
+          <option>Treino</option>
+        </select>
+
+        <button class="primary-button" onclick="createMatch()">Criar partida</button>
+      </section>
+
+      <section class="status-card" id="matchStatus">
+        Nenhuma partida criada ainda.
+      </section>
+    </main>
+
+    <!-- ELENCO -->
+    <main class="screen" id="squadScreen">
+      <section class="panel">
+        <h2>Elenco</h2>
+
+        <div class="form-grid">
+          <input id="playerName" type="text" placeholder="Nome ou apelido" />
+          <input id="playerNumber" type="number" placeholder="Nº" />
+          <select id="playerPosition">
+            <option>GOL</option>
+            <option>FIXO</option>
+            <option>DEF</option>
+            <option>ALA</option>
+            <option>MEI</option>
+            <option>ATA</option>
+            <option>PIVÔ</option>
+          </select>
+        </div>
+
+        <button class="primary-button" onclick="addPlayer()">Adicionar jogador</button>
+      </section>
+
+      <section class="player-list" id="playerList"></section>
+    </main>
+
+    <!-- ESCALAÇÃO / MINI CAMPO -->
+    <main class="screen" id="lineupScreen">
+      <section class="lineup-header">
+        <div>
+          <h2>Escalação</h2>
+          <p>7 na linha + 1 goleiro</p>
+        </div>
+
+        <select id="formationSelect" onchange="applyFormation()">
+          <option value="2-3-2">2-3-2</option>
+          <option value="3-2-2">3-2-2</option>
+          <option value="2-2-3">2-2-3</option>
+          <option value="livre">Livre</option>
+        </select>
+      </section>
+
+      <section class="pitch-card">
+        <div class="pitch" id="tacticalPitch">
+          <div class="pitch-line center"></div>
+          <div class="pitch-circle"></div>
+          <div class="goal-area top"></div>
+          <div class="goal-area bottom"></div>
+        </div>
+      </section>
+
+      <section class="mode-switch">
+        <button class="secondary-button active-mode" id="tacticModeBtn" onclick="setMode('tatico')">Modo Tático</button>
+        <button class="secondary-button" id="eventModeBtn" onclick="setMode('lance')">Modo Lance</button>
+      </section>
+
+      <p class="hint">No modo tático, arraste os jogadores. No modo lance, toque no jogador para registrar ação.</p>
+    </main>
+
+    <!-- JOGO AO VIVO -->
+    <main class="screen" id="liveScreen">
+      <section class="scoreboard">
+        <div class="team">
+          <div class="small-badge">UP</div>
+          <strong>União Paquerê</strong>
+        </div>
+
+        <div class="score">
+          <span id="homeScore">0</span>
+          <b>x</b>
+          <span id="awayScore">0</span>
+        </div>
+
+        <div class="team">
+          <div class="small-badge rival">ADV</div>
+          <strong>Adversário</strong>
+        </div>
+      </section>
+
+      <section class="timer-card">
+        <strong id="periodLabel">1º Tempo</strong>
+        <span id="timerDisplay">00:00</span>
+
+        <div class="timer-actions">
+          <button onclick="startTimer()">Iniciar</button>
+          <button onclick="pauseTimer()">Pausar</button>
+          <button onclick="resetTimer()">Zerar</button>
+        </div>
+      </section>
+
+      <section class="quick-pitch">
+        <h3>Toque no jogador</h3>
+        <div class="quick-grid" id="quickPlayers"></div>
+      </section>
+
+      <section class="last-event">
+        <small>Último lance</small>
+        <p id="lastEventText">Nenhum lance registrado.</p>
+      </section>
+    </main>
+
+    <!-- AÇÃO DO JOGADOR -->
+    <main class="screen" id="actionScreen">
+      <section class="selected-player-card">
+        <span id="selectedPlayerNumber">10</span>
+        <div>
+          <strong id="selectedPlayerName">Mota</strong>
+          <small id="selectedPlayerPosition">MEI</small>
+        </div>
+      </section>
+
+      <section class="action-grid">
+        <button onclick="registerEvent('Gol')">GOL<span>Gol</span></button>
+        <button onclick="registerEvent('Chute ao gol')">CH+<span>Chute ao gol</span></button>
+        <button onclick="registerEvent('Chute fora')">CH-<span>Chute fora</span></button>
+        <button onclick="registerEvent('Chance clara')">CLA<span>Chance clara</span></button>
+        <button onclick="registerEvent('Passe-chave')">PAS<span>Passe-chave</span></button>
+        <button onclick="registerEvent('Assistência')">AST<span>Assistência</span></button>
+
+        <button onclick="registerEvent('Desarme')">DES<span>Desarme</span></button>
+        <button onclick="registerEvent('Interceptação')">INT<span>Interceptação</span></button>
+        <button onclick="registerEvent('Corte')">COR<span>Corte</span></button>
+        <button onclick="registerEvent('Falta cometida')">FAL<span>Falta cometida</span></button>
+        <button onclick="registerEvent('Erro defensivo')">ERR<span>Erro defensivo</span></button>
+        <button onclick="registerEvent('Cansado')">CAN<span>Cansado</span></button>
+      </section>
+
+      <button class="danger-button" onclick="registerEvent('Lesão')">Lesão</button>
+    </main>
+
+    <!-- HISTÓRICO -->
+    <main class="screen" id="historyScreen">
+      <section class="panel">
+        <h2>Histórico</h2>
+        <p>Todos os lances registrados ficam salvos aqui.</p>
+      </section>
+
+      <section class="history-list" id="historyList"></section>
+    </main>
+
+    <!-- RESUMO -->
+    <main class="screen" id="summaryScreen">
+      <section class="panel">
+        <h2>Resumo</h2>
+        <p>Estatísticas ao vivo da partida.</p>
+      </section>
+
+      <section class="stats-grid" id="statsGrid"></section>
+
+      <section class="alerts">
+        <h3>Alertas inteligentes</h3>
+        <div class="alert warning">João já cometeu 3 faltas.</div>
+        <div class="alert success">Renan lidera os desarmes.</div>
+        <div class="alert info">Time sofre mais pelo lado esquerdo.</div>
+      </section>
+    </main>
+
+    <!-- MENU INFERIOR -->
+    <nav class="bottom-nav">
+      <button onclick="showScreen('lineupScreen')">▦<span>Campo</span></button>
+      <button onclick="showScreen('liveScreen')">L<span>Lance</span></button>
+      <button onclick="showScreen('summaryScreen')">▤<span>Resumo</span></button>
+      <button onclick="showScreen('squadScreen')">EL<span>Elenco</span></button>
+    </nav>
+
+  </div>
+
+        <script src="./app.js"></script>
+  <script src="./ai-summary.js"></script>
+  <script src="./match-archive.js"></script>
+  <script src="./match-lifecycle.js"></script>
+  <script src="./backup-manager.js"></script>
+</body>
+</html>
