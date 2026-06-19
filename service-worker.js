@@ -1,9 +1,9 @@
 /* =========================================================
    UP COACH — SERVICE WORKER
-   Cache offline resiliente + atualização mais segura.
+   Versão estável para recuperar navegação principal.
 ========================================================= */
 
-const CACHE_NAME = "up-coach-cache-v16";
+const CACHE_NAME = "up-coach-cache-v17";
 
 const APP_SHELL = [
   "./",
@@ -14,8 +14,6 @@ const APP_SHELL = [
   "./match-archive.js",
   "./match-lifecycle.js",
   "./backup-manager.js",
-  "./lineup-manager.js",
-  "./mobile-drag-fix.js",
   "./manifest.json",
   "./icons/icon-180.png",
   "./icons/icon-192.png",
