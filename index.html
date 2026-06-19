@@ -23,7 +23,6 @@
 <body>
   <div class="app-shell">
 
-    <!-- TOPO -->
     <header class="topbar">
       <button class="icon-button" id="backButton" onclick="goHome()">‹</button>
 
@@ -35,7 +34,6 @@
       <div class="mini-logo">UP</div>
     </header>
 
-    <!-- TELA INICIAL -->
     <main class="screen active" id="homeScreen">
       <section class="hero">
         <div class="club-badge">UP</div>
@@ -105,13 +103,12 @@
       </footer>
     </main>
 
-    <!-- NOVA PARTIDA -->
     <main class="screen" id="matchScreen">
       <section class="panel">
         <h2>Nova Partida</h2>
 
         <label for="opponentInput">Nome do adversário</label>
-        <input id="opponentInput" type="text" placeholder="Ex: Adversário" />
+        <input id="opponentInput" type="text" placeholder="Ex: COCA COLA" />
 
         <label for="placeInput">Local</label>
         <input id="placeInput" type="text" placeholder="Ex: Campo do Wagner" />
@@ -131,7 +128,6 @@
       </section>
     </main>
 
-    <!-- ELENCO -->
     <main class="screen" id="squadScreen">
       <section class="panel">
         <h2>Elenco</h2>
@@ -156,7 +152,6 @@
       <section class="player-list" id="playerList"></section>
     </main>
 
-    <!-- ESCALAÇÃO / MINI CAMPO -->
     <main class="screen" id="lineupScreen">
       <section class="lineup-header">
         <div>
@@ -189,7 +184,6 @@
       <p class="hint">No modo tático, arraste os jogadores. No modo lance, toque no jogador para registrar ação.</p>
     </main>
 
-    <!-- JOGO AO VIVO -->
     <main class="screen" id="liveScreen">
       <section class="scoreboard">
         <div class="team">
@@ -231,13 +225,12 @@
       </section>
     </main>
 
-    <!-- AÇÃO DO JOGADOR -->
     <main class="screen" id="actionScreen">
       <section class="selected-player-card">
         <span id="selectedPlayerNumber">10</span>
         <div>
-          <strong id="selectedPlayerName">Mota</strong>
-          <small id="selectedPlayerPosition">MEI</small>
+          <strong id="selectedPlayerName">Jogador</strong>
+          <small id="selectedPlayerPosition">POS</small>
         </div>
       </section>
 
@@ -248,7 +241,6 @@
         <button onclick="registerEvent('Chance clara')">CLA<span>Chance clara</span></button>
         <button onclick="registerEvent('Passe-chave')">PAS<span>Passe-chave</span></button>
         <button onclick="registerEvent('Assistência')">AST<span>Assistência</span></button>
-
         <button onclick="registerEvent('Desarme')">DES<span>Desarme</span></button>
         <button onclick="registerEvent('Interceptação')">INT<span>Interceptação</span></button>
         <button onclick="registerEvent('Corte')">COR<span>Corte</span></button>
@@ -260,7 +252,6 @@
       <button class="danger-button" onclick="registerEvent('Lesão')">Lesão</button>
     </main>
 
-    <!-- HISTÓRICO -->
     <main class="screen" id="historyScreen">
       <section class="panel">
         <h2>Histórico</h2>
@@ -270,7 +261,6 @@
       <section class="history-list" id="historyList"></section>
     </main>
 
-    <!-- RESUMO -->
     <main class="screen" id="summaryScreen">
       <section class="panel">
         <h2>Resumo</h2>
@@ -287,7 +277,6 @@
       </section>
     </main>
 
-    <!-- MENU INFERIOR -->
     <nav class="bottom-nav">
       <button onclick="showScreen('lineupScreen')">▦<span>Campo</span></button>
       <button onclick="showScreen('liveScreen')">L<span>Lance</span></button>
@@ -297,12 +286,10 @@
 
   </div>
 
-    <script src="./app.js"></script>
+  <script src="./app.js"></script>
   <script src="./ai-summary.js"></script>
   <script src="./match-archive.js"></script>
   <script src="./match-lifecycle.js"></script>
   <script src="./backup-manager.js"></script>
-  <script src="./lineup-manager.js"></script>
-  <script src="./mobile-drag-fix.js"></script>
 </body>
 </html>
