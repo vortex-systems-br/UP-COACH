@@ -1,9 +1,9 @@
 /* =========================================================
    UP COACH — SERVICE WORKER
-   Versão estável sem lineup-manager externo.
+   Versão estável com alertas inteligentes reais.
 ========================================================= */
 
-const CACHE_NAME = "up-coach-cache-v22";
+const CACHE_NAME = "up-coach-cache-v23";
 
 const APP_SHELL = [
   "./",
