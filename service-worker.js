@@ -3,7 +3,7 @@
    Versão estável sem lineup-manager externo.
 ========================================================= */
 
-const CACHE_NAME = "up-coach-cache-v19";
+const CACHE_NAME = "up-coach-cache-v22";
 
 const APP_SHELL = [
   "./",
