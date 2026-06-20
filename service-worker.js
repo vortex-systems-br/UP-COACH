@@ -1,9 +1,9 @@
 /* =========================================================
    UP COACH — SERVICE WORKER
-   Cache offline resiliente + Titulares e Banco seguro.
+   Versão estável sem lineup-manager externo.
 ========================================================= */
 
-const CACHE_NAME = "up-coach-cache-v18";
+const CACHE_NAME = "up-coach-cache-v19";
 
 const APP_SHELL = [
   "./",
@@ -14,7 +14,6 @@ const APP_SHELL = [
   "./match-archive.js",
   "./match-lifecycle.js",
   "./backup-manager.js",
-  "./lineup-manager.js",
   "./mobile-drag-fix.js",
   "./manifest.json",
   "./icons/icon-180.png",
@@ -59,9 +58,7 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   const request = event.request;
 
-  if (request.method !== "GET") {
-    return;
-  }
+  if (request.method !== "GET") return;
 
   const url = new URL(request.url);
 
@@ -108,16 +105,11 @@ async function networkFirst(request, offlineFallback = null) {
   } catch (error) {
     const cachedResponse = await caches.match(request);
 
-    if (cachedResponse) {
-      return cachedResponse;
-    }
+    if (cachedResponse) return cachedResponse;
 
     if (offlineFallback) {
       const fallbackResponse = await caches.match(offlineFallback);
-
-      if (fallbackResponse) {
-        return fallbackResponse;
-      }
+      if (fallbackResponse) return fallbackResponse;
     }
 
     return new Response("UP Coach offline: arquivo não encontrado no cache.", {
@@ -133,9 +125,7 @@ async function networkFirst(request, offlineFallback = null) {
 async function cacheFirst(request) {
   const cachedResponse = await caches.match(request);
 
-  if (cachedResponse) {
-    return cachedResponse;
-  }
+  if (cachedResponse) return cachedResponse;
 
   const cache = await caches.open(CACHE_NAME);
 
