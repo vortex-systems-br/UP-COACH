@@ -1,9 +1,9 @@
 /* =========================================================
    UP COACH — SERVICE WORKER
-   Versão estável para recuperar navegação principal.
+   Cache offline resiliente + Titulares e Banco seguro.
 ========================================================= */
 
-const CACHE_NAME = "up-coach-cache-v17";
+const CACHE_NAME = "up-coach-cache-v18";
 
 const APP_SHELL = [
   "./",
@@ -14,6 +14,8 @@ const APP_SHELL = [
   "./match-archive.js",
   "./match-lifecycle.js",
   "./backup-manager.js",
+  "./lineup-manager.js",
+  "./mobile-drag-fix.js",
   "./manifest.json",
   "./icons/icon-180.png",
   "./icons/icon-192.png",
