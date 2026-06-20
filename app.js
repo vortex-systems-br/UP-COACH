@@ -167,6 +167,7 @@ function enhanceInterface() {
   enhanceLiveControls();
   enhanceLastEventControls();
   enhanceSquadTools();
+  enhanceLineupControls();
 }
 
 function enhanceLiveControls() {
@@ -230,6 +231,184 @@ function enhanceSquadTools() {
   }
 }
 
+function enhanceLineupControls() {
+  injectLineupControlsStyles();
+
+  const lineupScreen = document.getElementById("lineupScreen");
+
+  if (!lineupScreen) return;
+  if (document.getElementById("lineupControlsPanel")) return;
+
+  lineupScreen.insertAdjacentHTML(
+    "beforeend",
+    `
+    <section class="lineup-manager-panel" id="lineupControlsPanel">
+      <h2>Titulares e Banco</h2>
+      <p>Escolha quem entra no campo. O limite é 7 jogadores de linha + 1 goleiro.</p>
+
+      <div class="lineup-counter" id="lineupCounter">
+        Carregando escalação...
+      </div>
+
+      <div class="lineup-manager-actions">
+        <button onclick="autoSelectStartingLineup()">Autoescalar 7 + 1</button>
+        <button onclick="clearStartingLineup()">Limpar escalação</button>
+      </div>
+
+      <div class="lineup-section-title">Titulares</div>
+      <div class="lineup-player-grid" id="lineupStarters"></div>
+
+      <div class="lineup-section-title">Banco</div>
+      <div class="lineup-player-grid" id="lineupBench"></div>
+    </section>
+    `
+  );
+}
+
+function injectLineupControlsStyles() {
+  if (document.getElementById("lineupControlsStyles")) return;
+
+  const style = document.createElement("style");
+  style.id = "lineupControlsStyles";
+  style.textContent = `
+    .lineup-manager-panel {
+      margin-top: 14px;
+      padding: 16px;
+      border-radius: var(--radius);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.070), rgba(255,255,255,0.030));
+      border: 1px solid var(--border);
+      box-shadow: 0 14px 42px rgba(0,0,0,0.23);
+    }
+
+    .lineup-manager-panel h2 {
+      margin: 0 0 6px;
+      font-size: 21px;
+      letter-spacing: -0.4px;
+    }
+
+    .lineup-manager-panel p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .lineup-counter {
+      margin-top: 12px;
+      padding: 12px;
+      border-radius: 14px;
+      background: rgba(255,255,255,0.045);
+      border: 1px solid rgba(255,255,255,0.08);
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .lineup-counter strong {
+      color: var(--gold-2);
+    }
+
+    .lineup-manager-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 9px;
+      margin-top: 12px;
+    }
+
+    .lineup-manager-actions button {
+      min-height: 44px;
+      border-radius: 14px;
+      font-weight: 850;
+      font-size: 12px;
+      color: var(--white);
+      background: rgba(255,255,255,0.055);
+      border: 1px solid rgba(255,255,255,0.10);
+    }
+
+    .lineup-manager-actions button:first-child {
+      color: #171103;
+      background: linear-gradient(180deg, var(--gold-2), var(--gold));
+      border-color: rgba(215,163,60,0.72);
+    }
+
+    .lineup-section-title {
+      margin: 16px 0 8px;
+      color: var(--white);
+      font-size: 14px;
+      font-weight: 900;
+    }
+
+    .lineup-player-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 9px;
+    }
+
+    .lineup-player-button {
+      min-height: 58px;
+      padding: 10px;
+      border-radius: 15px;
+      text-align: left;
+      color: var(--white);
+      background: rgba(255,255,255,0.045);
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .lineup-player-button.selected {
+      background:
+        radial-gradient(circle at top left, rgba(245,196,92,0.20), transparent 42%),
+        rgba(215,163,60,0.10);
+      border-color: rgba(245,196,92,0.58);
+    }
+
+    .lineup-player-button.goalie {
+      border-color: rgba(245,196,92,0.40);
+    }
+
+    .lineup-player-button strong {
+      display: block;
+      font-size: 13px;
+      font-weight: 950;
+    }
+
+    .lineup-player-button small {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.25;
+    }
+
+    .lineup-player-button.selected small {
+      color: #f6d789;
+    }
+
+    .lineup-empty-message {
+      padding: 12px;
+      border-radius: 14px;
+      color: var(--muted);
+      background: rgba(255,255,255,0.035);
+      border: 1px solid rgba(255,255,255,0.06);
+      font-size: 13px;
+      line-height: 1.45;
+      grid-column: 1 / -1;
+    }
+
+    .lineup-warning {
+      color: var(--gold-2);
+      font-weight: 850;
+    }
+
+    .lineup-player-button:active,
+    .lineup-manager-actions button:active {
+      transform: scale(0.985);
+    }
+  `;
+
+  document.head.appendChild(style);
+}
+
 /* =========================================================
    NAVEGAÇÃO DE TELAS
 ========================================================= */
@@ -291,6 +470,7 @@ function renderAll() {
   renderPlayerList();
   renderQuickPlayers();
   renderPitchPlayers();
+  renderLineupControls();
   renderHistory();
   renderStats();
   renderMatchStatus();
@@ -443,18 +623,48 @@ function renderPlayerList() {
 }
 
 function toggleLineupPlayer(playerId) {
+  const player = getPlayerById(playerId);
+
+  if (!player) return;
+
   const isInLineup = isPlayerInLineup(playerId);
 
   if (isInLineup) {
     appState.lineup.selectedPlayerIds = appState.lineup.selectedPlayerIds.filter((id) => id !== playerId);
     delete appState.lineup.positions[playerId];
   } else {
-    if (appState.lineup.selectedPlayerIds.length >= 8) {
-      alert("O mini campo usa 7 jogadores de linha + 1 goleiro. Remova alguém antes de adicionar outro.");
-      return;
-    }
+    if (isGoalkeeper(player)) {
+      const currentGoalkeeperId = appState.lineup.selectedPlayerIds.find((id) => {
+        const selectedPlayer = getPlayerById(id);
+        return selectedPlayer && isGoalkeeper(selectedPlayer);
+      });
 
-    appState.lineup.selectedPlayerIds.push(playerId);
+      if (currentGoalkeeperId && currentGoalkeeperId !== playerId) {
+        const currentGoalkeeper = getPlayerById(currentGoalkeeperId);
+        const confirmReplace = confirm(
+          `Já existe goleiro escalado: ${currentGoalkeeper.name}.\n\nDeseja substituir por ${player.name}?`
+        );
+
+        if (!confirmReplace) return;
+
+        appState.lineup.selectedPlayerIds = appState.lineup.selectedPlayerIds.filter((id) => id !== currentGoalkeeperId);
+        delete appState.lineup.positions[currentGoalkeeperId];
+      }
+
+      appState.lineup.selectedPlayerIds.push(playerId);
+    } else {
+      const linePlayersCount = appState.lineup.selectedPlayerIds.filter((id) => {
+        const selectedPlayer = getPlayerById(id);
+        return selectedPlayer && !isGoalkeeper(selectedPlayer);
+      }).length;
+
+      if (linePlayersCount >= 7) {
+        alert("Limite atingido: máximo de 7 jogadores de linha.");
+        return;
+      }
+
+      appState.lineup.selectedPlayerIds.push(playerId);
+    }
 
     normalizeLineupOrder();
 
@@ -462,17 +672,129 @@ function toggleLineupPlayer(playerId) {
   }
 
   normalizeLineupOrder();
+  fillMissingPositionsOnly();
 
   saveState();
   renderAll();
 }
-
 function isPlayerInLineup(playerId) {
   return appState.lineup.selectedPlayerIds.includes(playerId);
 }
 
 function getPlayerById(playerId) {
   return appState.players.find((player) => player.id === playerId);
+}
+
+function isGoalkeeper(player) {
+  return String(player?.position || "").trim().toUpperCase() === "GOL";
+}
+
+function renderLineupControls() {
+  enhanceLineupControls();
+
+  const counter = document.getElementById("lineupCounter");
+  const startersContainer = document.getElementById("lineupStarters");
+  const benchContainer = document.getElementById("lineupBench");
+
+  if (!counter || !startersContainer || !benchContainer) return;
+
+  normalizeLineupOrder();
+
+  const selectedIds = appState.lineup.selectedPlayerIds;
+  const starters = selectedIds
+    .map((id) => getPlayerById(id))
+    .filter(Boolean);
+
+  const bench = appState.players
+    .filter((player) => !selectedIds.includes(player.id))
+    .sort((a, b) => Number(a.number) - Number(b.number));
+
+  const lineCount = starters.filter((player) => !isGoalkeeper(player)).length;
+  const goalkeeperCount = starters.filter((player) => isGoalkeeper(player)).length;
+
+  counter.innerHTML = `
+    <strong>Titulares:</strong> ${starters.length}/8<br>
+    <strong>Linha:</strong> ${lineCount}/7<br>
+    <strong>Goleiro:</strong> ${goalkeeperCount}/1
+    ${
+      goalkeeperCount === 0
+        ? `<br><span class="lineup-warning">Nenhum goleiro selecionado.</span>`
+        : ``
+    }
+  `;
+
+  startersContainer.innerHTML = starters.length
+    ? starters.map((player) => buildLineupControlButton(player, true)).join("")
+    : `<div class="lineup-empty-message">Nenhum titular selecionado ainda.</div>`;
+
+  benchContainer.innerHTML = bench.length
+    ? bench.map((player) => buildLineupControlButton(player, false)).join("")
+    : `<div class="lineup-empty-message">Nenhum jogador no banco.</div>`;
+}
+
+function buildLineupControlButton(player, selected) {
+  const classes = [
+    "lineup-player-button",
+    selected ? "selected" : "",
+    isGoalkeeper(player) ? "goalie" : ""
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  return `
+    <button class="${classes}" onclick="toggleLineupPlayer('${player.id}')">
+      <strong>${escapeHTML(player.number)} — ${escapeHTML(player.name)}</strong>
+      <small>${escapeHTML(player.position)} • ${selected ? "Titular" : "Banco"}</small>
+    </button>
+  `;
+}
+
+function autoSelectStartingLineup() {
+  if (appState.players.length === 0) {
+    alert("Cadastre jogadores no elenco antes de escalar.");
+    return;
+  }
+
+  const sortedPlayers = [...appState.players].sort((a, b) => Number(a.number) - Number(b.number));
+
+  const goalkeeper = sortedPlayers.find((player) => isGoalkeeper(player));
+  const linePlayers = sortedPlayers.filter((player) => !isGoalkeeper(player)).slice(0, 7);
+
+  if (!goalkeeper) {
+    alert("Cadastre pelo menos um jogador com posição GOL.");
+    return;
+  }
+
+  if (linePlayers.length < 7) {
+    const confirmLess = confirm(
+      `Você tem apenas ${linePlayers.length} jogador(es) de linha.\n\nDeseja autoescalar mesmo assim?`
+    );
+
+    if (!confirmLess) return;
+  }
+
+  appState.lineup.selectedPlayerIds = [...linePlayers.map((player) => player.id), goalkeeper.id];
+  appState.lineup.positions = {};
+
+  normalizeLineupOrder();
+  fillMissingPositionsOnly();
+
+  saveState();
+  renderAll();
+}
+
+function clearStartingLineup() {
+  const confirmClear = confirm(
+    "Limpar escalação atual?\n\nOs jogadores continuam cadastrados no elenco."
+  );
+
+  if (!confirmClear) return;
+
+  appState.lineup.selectedPlayerIds = [];
+  appState.lineup.positions = {};
+
+  saveState();
+  renderAll();
 }
 
 /* =========================================================
@@ -677,12 +999,12 @@ function normalizeLineupOrder() {
 
   const goalkeepers = validIds.filter((id) => {
     const player = getPlayerById(id);
-    return player && player.position === "GOL";
+    return player && isGoalkeeper(player);
   });
 
   const linePlayers = validIds.filter((id) => {
     const player = getPlayerById(id);
-    return player && player.position !== "GOL";
+    return player && !isGoalkeeper(player);
   });
 
   const limitedLinePlayers = linePlayers.slice(0, 7);
@@ -728,7 +1050,7 @@ function renderPitchPlayers() {
     }
 
     const chip = document.createElement("button");
-    chip.className = `player-chip ${player.position === "GOL" ? "goalie" : ""}`;
+    chip.className = `player-chip ${isGoalkeeper(player) ? "goalie" : ""}`;
     chip.dataset.playerId = player.id;
     chip.style.left = `${position.left}%`;
     chip.style.top = `${position.top}%`;
@@ -1348,5 +1670,9 @@ window.resetTimer = resetTimer;
 window.selectPlayer = selectPlayer;
 window.registerEvent = registerEvent;
 window.deleteLastEvent = deleteLastEvent;
+
+window.autoSelectStartingLineup = autoSelectStartingLineup;
+window.clearStartingLineup = clearStartingLineup;
+window.renderLineupControls = renderLineupControls;
 
 window.resetAppData = resetAppData;
