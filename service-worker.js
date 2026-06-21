@@ -1,9 +1,9 @@
 /* =========================================================
    UP COACH — SERVICE WORKER
-   Versão com login interno do UP Coach.
+   Versão estável com alertas inteligentes reais.
 ========================================================= */
 
-const CACHE_NAME = "up-coach-cache-v26";
+const CACHE_NAME = "up-coach-cache-v28";
 
 const APP_SHELL = [
   "./",
