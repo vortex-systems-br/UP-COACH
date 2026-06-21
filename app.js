@@ -21,16 +21,16 @@ let appState = {
   mode: "tatico",
 
   players: [
-    { id: "p1", name: "Gabriel", number: 1, position: "GOL" },
-    { id: "p2", name: "Lucas", number: 3, position: "ALA" },
-    { id: "p3", name: "João", number: 4, position: "DEF" },
-    { id: "p4", name: "Renan", number: 5, position: "DEF" },
-    { id: "p5", name: "Pedro", number: 6, position: "MEI" },
-    { id: "p6", name: "Vitinho", number: 7, position: "ALA" },
-    { id: "p7", name: "Felipe", number: 8, position: "MEI" },
-    { id: "p8", name: "André", number: 9, position: "ATA" },
-    { id: "p9", name: "Mota", number: 10, position: "MEI" },
-    { id: "p10", name: "Caio", number: 11, position: "ATA" }
+    { id: "p1", name: "Gabriel", number: 1, position: "Goleiro" },
+    { id: "p2", name: "Lucas", number: 3, position: "Lateral direito" },
+    { id: "p3", name: "João", number: 4, position: "Zagueiro" },
+    { id: "p4", name: "Renan", number: 5, position: "Zagueiro" },
+    { id: "p5", name: "Pedro", number: 6, position: "Primeiro volante" },
+    { id: "p6", name: "Vitinho", number: 7, position: "Lateral esquerdo" },
+    { id: "p7", name: "Felipe", number: 8, position: "Segundo volante" },
+    { id: "p8", name: "André", number: 9, position: "Centro avante" },
+    { id: "p9", name: "Mota", number: 10, position: "Meio campo" },
+    { id: "p10", name: "Caio", number: 11, position: "Atacante" }
   ],
 
   match: {
@@ -69,6 +69,8 @@ let dragState = null;
 
 document.addEventListener("DOMContentLoaded", () => {
   loadState();
+
+  normalizeStoredPlayerPositions();
 
   normalizeLineupOrder();
 
@@ -473,7 +475,6 @@ function renderAll() {
   renderLineupControls();
   renderHistory();
   renderStats();
-  renderSmartAlerts();
   renderMatchStatus();
   renderScoreboard();
   renderSelectedPlayer();
@@ -539,7 +540,7 @@ function addPlayer() {
 
   nameInput.value = "";
   numberInput.value = "";
-  positionInput.value = "ATA";
+  positionInput.value = "Atacante";
 
   saveState();
   renderAll();
@@ -599,7 +600,7 @@ function renderPlayerList() {
           </div>
 
           <div class="player-pos">
-            ${escapeHTML(player.position)}
+            ${escapeHTML(getDisplayPlayerPosition(player.position))}
             <button
               onclick="event.stopPropagation(); removePlayer('${player.id}')"
               style="
@@ -631,6 +632,19 @@ function toggleLineupPlayer(playerId) {
   const isInLineup = isPlayerInLineup(playerId);
 
   if (isInLineup) {
+    const currentPosition = appState.lineup.positions[playerId];
+
+    if (currentPosition) {
+      appState.lineup.lastVacatedPosition = {
+        left: currentPosition.left,
+        top: currentPosition.top,
+        isGoalkeeper: isGoalkeeper(player),
+        playerId,
+        playerName: player.name,
+        createdAt: Date.now()
+      };
+    }
+
     appState.lineup.selectedPlayerIds = appState.lineup.selectedPlayerIds.filter((id) => id !== playerId);
     delete appState.lineup.positions[playerId];
   } else {
@@ -647,6 +661,19 @@ function toggleLineupPlayer(playerId) {
         );
 
         if (!confirmReplace) return;
+
+        const goalkeeperPosition = appState.lineup.positions[currentGoalkeeperId];
+
+        if (goalkeeperPosition) {
+          appState.lineup.lastVacatedPosition = {
+            left: goalkeeperPosition.left,
+            top: goalkeeperPosition.top,
+            isGoalkeeper: true,
+            playerId: currentGoalkeeperId,
+            playerName: currentGoalkeeper.name,
+            createdAt: Date.now()
+          };
+        }
 
         appState.lineup.selectedPlayerIds = appState.lineup.selectedPlayerIds.filter((id) => id !== currentGoalkeeperId);
         delete appState.lineup.positions[currentGoalkeeperId];
@@ -669,7 +696,7 @@ function toggleLineupPlayer(playerId) {
 
     normalizeLineupOrder();
 
-    assignMissingPitchPosition(playerId);
+    assignVacatedOrMissingPitchPosition(playerId);
   }
 
   normalizeLineupOrder();
@@ -687,7 +714,96 @@ function getPlayerById(playerId) {
 }
 
 function isGoalkeeper(player) {
-  return String(player?.position || "").trim().toUpperCase() === "GOL";
+  return normalizePlayerPosition(player?.position) === "goleiro";
+}
+
+function normalizePlayerPosition(position) {
+  const raw = String(position || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLowerCase();
+
+  const aliases = {
+    gol: "goleiro",
+    goleiro: "goleiro",
+
+    fixo: "zagueiro",
+    def: "zagueiro",
+    defesa: "zagueiro",
+    zagueiro: "zagueiro",
+
+    ala: "lateral direito",
+    "lateral direito": "lateral direito",
+    "lateral esquerdo": "lateral esquerdo",
+
+    volante: "primeiro volante",
+    "primeiro volante": "primeiro volante",
+    "segundo volante": "segundo volante",
+
+    mei: "meio campo",
+    meia: "meio campo",
+    "meio campo": "meio campo",
+
+    ata: "atacante",
+    atacante: "atacante",
+    pivo: "centro avante",
+    "centro avante": "centro avante"
+  };
+
+  return aliases[raw] || raw;
+}
+
+function getDisplayPlayerPosition(position) {
+  const role = normalizePlayerPosition(position);
+
+  const labels = {
+    goleiro: "Goleiro",
+    zagueiro: "Zagueiro",
+    "primeiro volante": "Primeiro volante",
+    "segundo volante": "Segundo volante",
+    "lateral direito": "Lateral direito",
+    "lateral esquerdo": "Lateral esquerdo",
+    "meio campo": "Meio campo",
+    atacante: "Atacante",
+    "centro avante": "Centro avante"
+  };
+
+  return labels[role] || String(position || "");
+}
+
+function normalizeStoredPlayerPositions() {
+  if (!Array.isArray(appState.players)) return;
+
+  const preferredByName = {
+    gabriel: "Goleiro",
+    lucas: "Lateral direito",
+    joao: "Zagueiro",
+    renan: "Zagueiro",
+    pedro: "Primeiro volante",
+    vitinho: "Lateral esquerdo",
+    felipe: "Segundo volante",
+    andre: "Centro avante",
+    mota: "Meio campo",
+    caio: "Atacante"
+  };
+
+  appState.players = appState.players.map((player) => {
+    const normalizedName = String(player.name || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .trim()
+      .toLowerCase();
+
+    const current = normalizePlayerPosition(player.position);
+    const legacyPositions = ["gol", "fixo", "def", "ala", "mei", "ata", "pivo"];
+
+    if (preferredByName[normalizedName] && legacyPositions.includes(String(player.position || "").trim().toLowerCase())) {
+      return { ...player, position: preferredByName[normalizedName] };
+    }
+
+    return { ...player, position: getDisplayPlayerPosition(current || player.position) };
+  });
 }
 
 function renderLineupControls() {
@@ -745,7 +861,7 @@ function buildLineupControlButton(player, selected) {
   return `
     <button class="${classes}" onclick="toggleLineupPlayer('${player.id}')">
       <strong>${escapeHTML(player.number)} — ${escapeHTML(player.name)}</strong>
-      <small>${escapeHTML(player.position)} • ${selected ? "Titular" : "Banco"}</small>
+      <small>${escapeHTML(getDisplayPlayerPosition(player.position))} • ${selected ? "Titular" : "Banco"}</small>
     </button>
   `;
 }
@@ -776,6 +892,7 @@ function autoSelectStartingLineup() {
 
   appState.lineup.selectedPlayerIds = [...linePlayers.map((player) => player.id), goalkeeper.id];
   appState.lineup.positions = {};
+  delete appState.lineup.lastVacatedPosition;
 
   normalizeLineupOrder();
   fillMissingPositionsOnly();
@@ -793,6 +910,7 @@ function clearStartingLineup() {
 
   appState.lineup.selectedPlayerIds = [];
   appState.lineup.positions = {};
+  delete appState.lineup.lastVacatedPosition;
 
   saveState();
   renderAll();
@@ -969,30 +1087,83 @@ function applyFormation() {
 }
 
 function fillMissingPositionsOnly() {
-  const fallbackPositions = formationPositions["2-3-2"];
-
-  appState.lineup.selectedPlayerIds.forEach((playerId, index) => {
+  appState.lineup.selectedPlayerIds.forEach((playerId) => {
     if (appState.lineup.positions[playerId]) return;
 
-    const fallback = fallbackPositions[index] || fallbackPositions[fallbackPositions.length - 1];
-
-    appState.lineup.positions[playerId] = {
-      left: fallback.left,
-      top: fallback.top
-    };
+    assignMissingPitchPosition(playerId);
   });
 }
 
 function assignMissingPitchPosition(playerId) {
-  const index = appState.lineup.selectedPlayerIds.indexOf(playerId);
+  const player = getPlayerById(playerId);
+
+  if (!player) return;
+  if (appState.lineup.positions[playerId]) return;
+
+  const position = getDefaultPositionByPlayerRole(player);
+
+  appState.lineup.positions[playerId] = {
+    left: position.left,
+    top: position.top
+  };
+}
+
+function assignVacatedOrMissingPitchPosition(playerId) {
+  const player = getPlayerById(playerId);
+
+  if (!player) {
+    assignMissingPitchPosition(playerId);
+    return;
+  }
+
+  const lastVacatedPosition = appState.lineup.lastVacatedPosition;
+
+  if (lastVacatedPosition) {
+    const sameType =
+      Boolean(lastVacatedPosition.isGoalkeeper) === Boolean(isGoalkeeper(player));
+
+    if (sameType) {
+      appState.lineup.positions[playerId] = {
+        left: lastVacatedPosition.left,
+        top: lastVacatedPosition.top
+      };
+
+      delete appState.lineup.lastVacatedPosition;
+      return;
+    }
+  }
+
+  assignMissingPitchPosition(playerId);
+}
+
+function getDefaultPositionByPlayerRole(player) {
+  const role = normalizePlayerPosition(player?.position);
+
+  const rolePositions = {
+    goleiro: { left: 46, top: 84 },
+
+    zagueiro: { left: 46, top: 68 },
+
+    "primeiro volante": { left: 36, top: 55 },
+    "segundo volante": { left: 56, top: 55 },
+
+    "lateral direito": { left: 73, top: 61 },
+    "lateral esquerdo": { left: 19, top: 61 },
+
+    "meio campo": { left: 46, top: 38 },
+
+    atacante: { left: 34, top: 18 },
+    "centro avante": { left: 58, top: 15 }
+  };
+
+  if (rolePositions[role]) {
+    return rolePositions[role];
+  }
+
+  const index = appState.lineup.selectedPlayerIds.indexOf(player.id);
   const fallback = formationPositions["2-3-2"][index] || formationPositions["2-3-2"][0];
 
-  if (!appState.lineup.positions[playerId]) {
-    appState.lineup.positions[playerId] = {
-      left: fallback.left,
-      top: fallback.top
-    };
-  }
+  return fallback;
 }
 
 function normalizeLineupOrder() {
@@ -1231,7 +1402,7 @@ function renderQuickPlayers() {
       return `
         <button class="quick-player" onclick="selectPlayer('${player.id}')">
           ${player.number} — ${escapeHTML(player.name)}
-          <small>${escapeHTML(player.position)}</small>
+          <small>${escapeHTML(getDisplayPlayerPosition(player.position))}</small>
         </button>
       `;
     })
@@ -1266,7 +1437,7 @@ function renderSelectedPlayer() {
 
   numberEl.textContent = player.number;
   nameEl.textContent = player.name;
-  positionEl.textContent = player.position;
+  positionEl.textContent = getDisplayPlayerPosition(player.position);
 }
 
 /* =========================================================
@@ -1624,184 +1795,6 @@ function countActions(events, actions) {
 }
 
 /* =========================================================
-   ALERTAS INTELIGENTES REAIS
-========================================================= */
-
-function renderSmartAlerts() {
-  const smartAlerts = document.getElementById("smartAlerts");
-
-  if (!smartAlerts) return;
-
-  const playerEvents = appState.events.filter((event) => event.type === "player");
-
-  if (playerEvents.length === 0) {
-    smartAlerts.innerHTML = `
-      <div class="alert info">
-        Nenhum lance registrado ainda. Os alertas aparecerão conforme a partida avançar.
-      </div>
-    `;
-    return;
-  }
-
-  const alerts = [];
-
-  const foulsByPlayer = countEventsByPlayer(playerEvents, "Falta cometida");
-  const defensiveErrorsByPlayer = countEventsByPlayer(playerEvents, "Erro defensivo");
-  const goalsByPlayer = countEventsByPlayer(playerEvents, "Gol");
-  const tacklesByPlayer = countEventsByPlayer(playerEvents, "Desarme");
-  const shotsOffByPlayer = countEventsByPlayer(playerEvents, "Chute fora");
-  const injuriesByPlayer = countEventsByPlayer(playerEvents, "Lesão");
-  const tiredByPlayer = countEventsByPlayer(playerEvents, "Cansado");
-
-  Object.values(foulsByPlayer).forEach((item) => {
-    if (item.count >= 3) {
-      alerts.push({
-        type: "warning",
-        text: `${item.playerName} já cometeu ${item.count} faltas. Atenção para evitar cartão ou risco defensivo.`
-      });
-    }
-  });
-
-  Object.values(defensiveErrorsByPlayer).forEach((item) => {
-    if (item.count >= 2) {
-      alerts.push({
-        type: "warning",
-        text: `${item.playerName} já teve ${item.count} erros defensivos. Vale orientar posicionamento ou cobertura.`
-      });
-    }
-
-    if (item.count === 1) {
-      alerts.push({
-        type: "info",
-        text: `${item.playerName} registrou 1 erro defensivo. Atenção na recomposição.`
-      });
-    }
-  });
-
-  const topScorer = getTopEventPlayer(goalsByPlayer);
-
-  if (topScorer && topScorer.count >= 1) {
-    alerts.push({
-      type: "success",
-      text: `${topScorer.playerName} é destaque ofensivo com ${topScorer.count} gol(s).`
-    });
-  }
-
-  const topTackler = getTopEventPlayer(tacklesByPlayer);
-
-  if (topTackler && topTackler.count >= 2) {
-    alerts.push({
-      type: "success",
-      text: `${topTackler.playerName} lidera os desarmes com ${topTackler.count} ações.`
-    });
-  }
-
-  Object.values(shotsOffByPlayer).forEach((item) => {
-    if (item.count >= 3) {
-      alerts.push({
-        type: "warning",
-        text: `${item.playerName} finalizou ${item.count} vezes para fora. Vale pedir mais calma na conclusão.`
-      });
-    }
-  });
-
-  Object.values(injuriesByPlayer).forEach((item) => {
-    if (item.count >= 1) {
-      alerts.push({
-        type: "warning",
-        text: `${item.playerName} teve lesão registrada. Avaliar substituição ou condição física.`
-      });
-    }
-  });
-
-  Object.values(tiredByPlayer).forEach((item) => {
-    if (item.count >= 1) {
-      alerts.push({
-        type: "info",
-        text: `${item.playerName} foi marcado como cansado. Pode ser hora de rodar o banco.`
-      });
-    }
-  });
-
-  const stats = calculateStats();
-
-  if (stats.finalizacoes >= 5 && stats.chutesNoGol === 0) {
-    alerts.push({
-      type: "warning",
-      text: `O time finalizou ${stats.finalizacoes} vezes, mas ainda não acertou o gol. Ajustar pontaria.`
-    });
-  }
-
-  if (stats.chutesNoGol >= 3 && appState.match.homeScore === 0) {
-    alerts.push({
-      type: "warning",
-      text: `O time já acertou ${stats.chutesNoGol} chutes no gol, mas ainda não marcou. Melhorar aproveitamento.`
-    });
-  }
-
-  if (appState.match.awayScore > appState.match.homeScore) {
-    alerts.push({
-      type: "warning",
-      text: `O União Paquerê está atrás no placar. Pode ser hora de ajustar postura ofensiva.`
-    });
-  }
-
-  if (appState.match.homeScore > appState.match.awayScore) {
-    alerts.push({
-      type: "success",
-      text: `O União Paquerê está vencendo. Atenção para manter organização e não se expor.`
-    });
-  }
-
-  if (stats.passesChave === 0 && playerEvents.length >= 5) {
-    alerts.push({
-      type: "info",
-      text: `Ainda não há passes-chave registrados. O time pode estar criando pouco por construção.`
-    });
-  }
-
-  if (alerts.length === 0) {
-    alerts.push({
-      type: "info",
-      text: `Sem alertas críticos no momento. Continue registrando os lances para uma leitura mais precisa.`
-    });
-  }
-
-  smartAlerts.innerHTML = alerts
-    .slice(0, 4)
-    .map((alert) => `<div class="alert ${alert.type}">${escapeHTML(alert.text)}</div>`)
-    .join("");
-}
-
-function countEventsByPlayer(events, action) {
-  return events
-    .filter((event) => event.action === action)
-    .reduce((acc, event) => {
-      const key = event.playerId || event.playerName || "sem-jogador";
-
-      if (!acc[key]) {
-        acc[key] = {
-          playerId: event.playerId,
-          playerName: event.playerName || "Jogador",
-          count: 0
-        };
-      }
-
-      acc[key].count += 1;
-
-      return acc;
-    }, {});
-}
-
-function getTopEventPlayer(map) {
-  const values = Object.values(map);
-
-  if (values.length === 0) return null;
-
-  return values.sort((a, b) => b.count - a.count)[0];
-}
-
-/* =========================================================
    FUNÇÕES UTILITÁRIAS
 ========================================================= */
 
@@ -1853,6 +1846,7 @@ window.deleteLastEvent = deleteLastEvent;
 window.autoSelectStartingLineup = autoSelectStartingLineup;
 window.clearStartingLineup = clearStartingLineup;
 window.renderLineupControls = renderLineupControls;
-window.renderSmartAlerts = renderSmartAlerts;
 
+window.normalizePlayerPosition = normalizePlayerPosition;
+window.getDisplayPlayerPosition = getDisplayPlayerPosition;
 window.resetAppData = resetAppData;
